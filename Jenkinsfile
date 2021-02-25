@@ -1,9 +1,20 @@
 pipeline {
-    agent { docker { image 'python:3.5.1' } }
+    agent { docker { image 'python:3.9' } }
     stages {
         stage('build') {
             steps {
                 sh 'python --version'
+                sh 'python3 -m venv venv'
+                sh '. venv/bin/activate'
+                sh 'pip install -r requirements.txt'
+            }
+        }
+        stage('test') {
+            steps {
+                sh 'python --version'
+                sh '. venv/bin/activate'
+                sh 'flake8 --exclude=venv* --statistics'
+                sh 'pytest -v --cov=calculator'
             }
         }
     }
@@ -19,6 +30,9 @@ pipeline {
         }
         failure {
             echo 'This will run only if failed'
+            slackSend channel: '#jenkinsbuild',
+                  color: 'bad',
+                  message: "The pipeline ${currentBuild.fullDisplayName} failed"
         }
         unstable {
             echo 'This will run only if the run was marked as unstable'
